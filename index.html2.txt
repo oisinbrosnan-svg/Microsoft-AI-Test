@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>StudyBoard – Calm Learning Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #050b18;
+      --bg-elevated: #0b1222;
+      --bg-soft: #11182a;
+      --primary: #123c7c;
+      --primary-soft: #1b4f9c;
+      --accent: #4ea3ff;
+      --text-main: #f5f7ff;
+      --text-soft: #a9b3d1;
+      --border-subtle: #1f2940;
+      --radius-card: 14px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: radial-gradient(circle at top, #0f1a33 0, #050b18 55%);
+      color: var(--text-main);
+      font-family: var(--font-main);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Pomodoro bar */
+    .pomodoro-bar {
+      height: 40px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: #050814;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pomodoro-progress {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #1b4f9c, #4ea3ff);
+      opacity: 0.25;
+      transition: width 0.2s linear;
+    }
+
+    .pomodoro-info {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    /* Layout */
+    .layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr) 320px;
+      height: calc(100vh - 40px);
+    }
+
+    /* Left sidebar */
+    .sidebar-left {
+      background: #050814;
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: radial-gradient(circle at top left, #4ea3ff, #123c7c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .nav-icons, .nav-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-icons { margin-top: 8px; }
+    .nav-bottom { margin-top: auto; margin-bottom: 8px; }
+
+    .nav-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      border: none;
+      background: transparent;
+      color: var(--text-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+      font-size: 20px;
+    }
+
+    .nav-icon:hover {
+      background: #0f1729;
+      color: var(--text-main);
+      transform: translateY(-1px);
+    }
+
+    .nav-icon.active {
+      background: linear-gradient(145deg, #123c7c, #1b4f9c);
+      color: #f5f7ff;
+    }
+
+    /* Main content */
+    .main-content {
+      padding: 14px 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page {
+      display: none;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .page.active { display: block; }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .page-header p {
+      margin: 4px 0 10px;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    /* Cards */
+    .card {
+      background: radial-gradient(circle at top left, #11182a, #050b18);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .soft-text {
+      color: var(--text-soft);
+      font-size: 13px;
+    }
+
+    /* Buttons */
+    .primary-btn, .secondary-btn {
+      border-radius: var(--radius-pill);
+      border: none;
+      padding: 7px 13px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+
+    .primary-btn {
+      background: linear-gradient(145deg, #123c7c, #1b4f9c);
+      color: #f5f7ff;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .secondary-btn {
+      background: #11182a;
+      color: var(--text-soft);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .secondary-btn:hover {
+      background: #151d32;
+      color: var(--text-main);
+    }
+
+    .secondary-btn.small {
+      padding: 4px 9px;
+      font-size: 11px;
+    }
+
+    /* Home grid */
+    .home-grid {
+      display: grid;
+      grid-template-rows: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      height: 100%;
+    }
+
+    .home-card p {
+      margin: 4px 0 10px;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    /* AI Notes */
+    .ai-notes-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+      gap: 10px;
+      height: calc(100% - 40px);
+    }
+
+    .ai-input-card textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: #050b18;
+      color: var(--text-main);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: var(--font-main);
+    }
+
+    .ai-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .ai-output-content {
+      margin-top: 6px;
+      padding: 8px;
+      border-radius: 10px;
+      background: #050b18;
+      border: 1px dashed var(--border-subtle);
+      height: 100%;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .flashcard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    .flashcard {
+      background: #0b1222;
+      border-radius: 10px;
+      padding: 8px;
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+    }
+
+    .flashcard-front, .flashcard-back { font-size: 13px; }
+    .flashcard-back { display: none; color: var(--accent); }
+    .flashcard.flipped .flashcard-front { display: none; }
+    .flashcard.flipped .flashcard-back { display: block; }
+
+    .mindmap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mindmap-node {
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+      background: #11182a;
+      border: 1px solid var(--border-subtle);
+      font-size: 12px;
+    }
+
+    .infographic-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .infographic-list li { margin-bottom: 4px; }
+
+    .podcast-card { display: flex; flex-direction: column; gap: 6px; }
+    .podcast-card audio { width: 100%; }
+
+    /* Tracker */
+    .tracker-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+      grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 10px;
+      height: calc(100% - 40px);
+    }
+
+    .tracker-form-card { grid-row: 1 / span 2; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 7px;
+      font-size: 13px;
+    }
+
+    .form-group input, .form-group textarea {
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: #050b18;
+      color: var(--text-main);
+      padding: 6px 8px;
+      font-size: 13px;
+      font-family: var(--font-main);
+    }
+
+    .pomodoro-controls {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .pomodoro-buttons {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .tracker-stats-card { grid-column: 2; grid-row: 1; }
+    .tracker-list-card { grid-column: 2; grid-row: 2; overflow: hidden; }
+
+    .tracker-summary {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+
+    .summary-label {
+      display: block;
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .session-list {
+      margin-top: 6px;
+      max-height: 170px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .session-item {
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #050b18;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 5px;
+    }
+
+    /* QuizQuest */
+    .quizquest-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+      gap: 10px;
+      height: calc(100% - 40px);
+    }
+
+    .qq-progress {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .qq-bar {
+      margin-top: 8px;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #050b18;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+
+    #qqXPBar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4ea3ff, #1b4f9c);
+    }
+
+    .qq-levels {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .qq-levels li { margin-bottom: 4px; }
+
+    /* Notes */
+    .notes-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+      gap: 10px;
+      height: calc(100% - 40px);
+    }
+
+    .notes-form-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .notes-filters {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .notes-filters input {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: #050b18;
+      color: var(--text-main);
+      padding: 6px 9px;
+      font-size: 13px;
+    }
+
+    .notes-list {
+      max-height: 260px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .note-item {
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #050b18;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+
+    .note-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .note-item-title { font-weight: 500; }
+    .note-item-meta { font-size: 11px; color: var(--text-soft); }
+    .note-item-tags { font-size: 11px; color: var(--accent); }
+
+    .note-item-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    /* Right sidebar */
+    .sidebar-right {
+      background: #050814;
+      border-left: 1px solid var(--border-subtle);
+      padding: 10px 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .right-card {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .recent-notes {
+      max-height: 130px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .recent-note-item {
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #050b18;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+
+    .recent-note-title { font-size: 13px; }
+    .recent-note-time { font-size: 11px; color: var(--text-soft); }
+
+    #timetablePrompt {
+      width: 100%;
+      min-height: 70px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: #050b18;
+      color: var(--text-main);
+      padding: 6px 8px;
+      font-size: 13px;
+      font-family: var(--font-main);
+    }
+
+    .timetable-output {
+      margin-top: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .right-quick {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .export-area {
+      width: 100%;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      background: #050b18;
+      color: var(--text-soft);
+      padding: 6px 8px;
+      font-size: 12px;
+      resize: vertical;
+    }
+
+    /* Analytics */
+    #analyticsSummary {
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #050b18; }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2940;
+      border-radius: 999px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 60px minmax(0, 1fr); }
+      .sidebar-right { display: none; }
+    }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 52px minmax(0, 1fr); }
+      .ai-notes-layout,
+      .tracker-layout,
+      .quizquest-layout,
+      .notes-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Pomodoro bar -->
+    <div class="pomodoro-bar">
+      <div class="pomodoro-progress" id="pomodoroProgress"></div>
+      <div class="pomodoro-info">
+        <span id="pomodoroLabel">Ready for a gentle focus block?</span>
+        <span id="pomodoroTime">25:00</span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <!-- Left Sidebar -->
+      <aside class="sidebar-left">
+        <div class="logo">SB</div>
+        <nav class="nav-icons">
+          <button class="nav-icon active" data-page="home" title="Home">🏠</button>
+          <button class="nav-icon" data-page="ai-notes" title="AI Notes">🧠</button>
+          <button class="nav-icon" data-page="tracker" title="Study Tracker">📈</button>
+          <button class="nav-icon" data-page="quizquest" title="QuizQuest">🎮</button>
+          <button class="nav-icon" data-page="notes" title="Notes Library">📚</button>
+          <button class="nav-icon" data-page="analytics" title="Progress & Analytics">📊</button>
+        </nav>
+        <div class="nav-bottom">
+          <button class="nav-icon" data-page="settings" title="Settings">⚙️</button>
+          <button class="nav-icon" data-page="account" title="Account">👤</button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- HOME -->
+        <section class="page active" id="page-home">
+          <div class="home-grid">
+            <div class="card home-card">
+              <h2>AI Notes</h2>
+              <p>Turn any topic into flashcards, mind maps, and more.</p>
+              <button class="primary-btn" data-page-jump="ai-notes">Open AI Notes</button>
+            </div>
+            <div class="card home-card">
+              <h2>Study Tracker</h2>
+              <p>Log sessions, track streaks, and keep it kind.</p>
+              <button class="primary-btn" data-page-jump="tracker">Open Tracker</button>
+            </div>
+            <div class="card home-card">
+              <h2>QuizQuest</h2>
+              <p>Earn XP by studying and unlock new focus modes.</p>
+              <button class="primary-btn" data-page-jump="quizquest">Open QuizQuest</button>
+            </div>
+            <div class="card home-card">
+              <h2>Notes Library</h2>
+              <p>All your notes in one calm, searchable space.</p>
+              <button class="primary-btn" data-page-jump="notes">Open Notes Library</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI NOTES -->
+        <section class="page" id="page-ai-notes">
+          <div class="page-header">
+            <h1>AI Notes</h1>
+            <p>Generate structured study aids from any prompt.</p>
+          </div>
+          <div class="ai-notes-layout">
+            <div class="card ai-input-card">
+              <label for="aiPrompt">Study prompt</label>
+              <textarea id="aiPrompt" placeholder="e.g., Explain mitosis in simple terms."></textarea>
+              <div class="ai-buttons">
+                <button class="secondary-btn ai-btn" data-type="flashcards">Flashcards</button>
+                <button class="secondary-btn ai-btn" data-type="infographic">Infographic</button>
+                <button class="secondary-btn ai-btn" data-type="podcast">Podcast</button>
+                <button class="secondary-btn ai-btn" data-type="mindmap">Mind Map</button>
+              </div>
+            </div>
+            <div class="card ai-output-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h2>Generated Study Aid</h2>
+                <button class="secondary-btn" id="saveAsNoteBtn">Save as Note</button>
+              </div>
+              <div class="ai-output-content" id="aiOutput">
+                <p class="soft-text">Choose a study aid above after typing a prompt.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TRACKER -->
+        <section class="page" id="page-tracker">
+          <div class="page-header">
+            <h1>Study Tracker</h1>
+            <p>Log sessions, track streaks, and watch your consistency grow.</p>
+          </div>
+          <div class="tracker-layout">
+            <div class="card tracker-form-card">
+              <h2>Log a Session</h2>
+              <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="sessionSubject" placeholder="e.g., Biology" />
+              </div>
+              <div class="form-group">
+                <label>Topic</label>
+                <input type="text" id="sessionTopic" placeholder="e.g., Photosynthesis" />
+              </div>
+              <div class="form-group">
+                <label>Duration (minutes)</label>
+                <input type="number" id="sessionDuration" min="1" />
+              </div>
+              <div class="form-group">
+                <label>Test score (optional)</label>
+                <input type="number" id="sessionScore" min="0" max="100" />
+              </div>
+              <button class="primary-btn" id="logSessionBtn">Log Session</button>
+
+              <div class="pomodoro-controls">
+                <h3>Pomodoro Session</h3>
+                <p class="soft-text">25 minutes of focus, then a gentle 5-minute break.</p>
+                <div class="pomodoro-buttons">
+                  <button class="secondary-btn" id="startPomodoroBtn">Start</button>
+                  <button class="secondary-btn" id="pausePomodoroBtn">Pause</button>
+                  <button class="secondary-btn" id="resetPomodoroBtn">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card tracker-stats-card">
+              <h2>Consistency & XP</h2>
+              <canvas id="trackerChart" height="150"></canvas>
+              <div class="tracker-summary">
+                <div>
+                  <span class="summary-label">Total minutes</span>
+                  <span id="totalMinutes">0</span>
+                </div>
+                <div>
+                  <span class="summary-label">Current streak (days)</span>
+                  <span id="currentStreak">0</span>
+                </div>
+                <div>
+                  <span class="summary-label">Study XP</span>
+                  <span id="trackerXP">0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card tracker-list-card">
+              <h2>Recent Sessions</h2>
+              <div class="session-list" id="sessionList"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- QUIZQUEST -->
+        <section class="page" id="page-quizquest">
+          <div class="page-header">
+            <h1>QuizQuest</h1>
+            <p>Gamified progress based on your own study work.</p>
+          </div>
+          <div class="quizquest-layout">
+            <div class="card">
+              <h2>Progress</h2>
+              <div class="qq-progress">
+                <div>
+                  <span class="summary-label">Level</span>
+                  <span id="qqLevel">1</span>
+                </div>
+                <div>
+                  <span class="summary-label">XP</span>
+                  <span id="qqXP">0</span>
+                </div>
+                <div>
+                  <span class="summary-label">Next level at</span>
+                  <span id="qqNextLevelXP">100</span>
+                </div>
+                <div>
+                  <span class="summary-label">Streak</span>
+                  <span id="qqStreak">0</span>
+                </div>
+              </div>
+              <div class="qq-bar">
+                <div id="qqXPBar"></div>
+              </div>
+              <p class="soft-text">
+                You gain XP by logging sessions, generating AI notes, and saving notes.
+              </p>
+            </div>
+            <div class="card">
+              <h2>Current Focus</h2>
+              <p id="qqFocusText" class="soft-text">Level 1: Gentle reading & summarising.</p>
+              <ul class="qq-levels">
+                <li><strong>Level 1:</strong> Reading & summaries</li>
+                <li><strong>Level 2:</strong> Flashcards & recall</li>
+                <li><strong>Level 3:</strong> Quizzes & self-testing</li>
+                <li><strong>Level 4:</strong> Mind maps & connections</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- NOTES -->
+        <section class="page" id="page-notes">
+          <div class="page-header">
+            <h1>Notes Library</h1>
+            <p>All your notes, calmly organised and searchable.</p>
+          </div>
+          <div class="notes-layout">
+            <div class="card">
+              <h2>Create / Edit Note</h2>
+              <input type="hidden" id="noteId" />
+              <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="noteTitle" />
+              </div>
+              <div class="form-group">
+                <label>Subject / Topic</label>
+                <input type="text" id="noteSubject" />
+              </div>
+              <div class="form-group">
+                <label>Tags (comma-separated)</label>
+                <input type="text" id="noteTags" />
+              </div>
+              <div class="form-group">
+                <label>Content</label>
+                <textarea id="noteContent" rows="6"></textarea>
+              </div>
+              <div class="notes-form-actions">
+                <button class="primary-btn" id="saveNoteBtn">Save Note</button>
+                <button class="secondary-btn" id="clearNoteFormBtn">Clear</button>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Your Notes</h2>
+              <div class="notes-filters">
+                <input type="text" id="noteSearch" placeholder="Search by title, subject, or content..." />
+                <input type="text" id="noteTagFilter" placeholder="Filter by tag..." />
+              </div>
+              <div class="notes-list" id="notesList"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ANALYTICS -->
+        <section class="page" id="page-analytics">
+          <div class="page-header">
+            <h1>Progress & Analytics</h1>
+            <p>A gentle overview of how consistently you’ve been showing up.</p>
+          </div>
+          <div class="card">
+            <h2>Overview</h2>
+            <p id="analyticsSummary"></p>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="page" id="page-settings">
+          <div class="page-header">
+            <h1>Settings</h1>
+            <p>Light-touch controls. Nothing here will punish you.</p>
+          </div>
+          <div class="card">
+            <h2>Pomodoro Preferences</h2>
+            <div class="form-group">
+              <label for="pomodoroLength">Pomodoro length (minutes)</label>
+              <input type="number" id="pomodoroLength" min="5" max="60" />
+            </div>
+            <div class="form-group">
+              <label for="breakLength">Break length (minutes)</label>
+              <input type="number" id="breakLength" min="1" max="30" />
+            </div>
+            <button class="primary-btn" id="saveSettingsBtn">Save Settings</button>
+            <p id="settingsSavedMsg" class="soft-text"></p>
+          </div>
+        </section>
+
+        <!-- ACCOUNT -->
+        <section class="page" id="page-account">
+          <div class="page-header">
+            <h1>Account</h1>
+            <p>This is your space. Everything is stored locally in this browser.</p>
+          </div>
+          <div class="card">
+            <h2>Data</h2>
+            <button class="secondary-btn" id="exportDataBtn">Export Data (JSON)</button>
+            <textarea id="exportDataArea" class="export-area" readonly rows="6"></textarea>
+          </div>
+        </section>
+      </main>
+
+      <!-- Right Sidebar -->
+      <aside class="sidebar-right">
+        <div class="card right-card">
+          <h2>Recent Notes</h2>
+          <div class="recent-notes" id="recentNotes"></div>
+        </div>
+        <div class="card right-card">
+          <h2>AI Timetable</h2>
+          <textarea id="timetablePrompt" placeholder="e.g., I can study 1 hour on weekdays after 6pm, and 2 hours on Sundays. Focus on maths and chemistry."></textarea>
+          <button class="primary-btn" id="generateTimetableBtn">Generate Timetable</button>
+          <div class="timetable-output" id="timetableOutput"></div>
+        </div>
+        <div class="right-quick">
+          <button class="secondary-btn small">Help</button>
+          <button class="secondary-btn small">Sync</button>
+          <button class="secondary-btn small">Log out</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    /* ---------- Storage ---------- */
+    const STORAGE_KEY = "studyboard-data-v1";
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          return {
+            notes: [],
+            sessions: [],
+            qqXP: 0,
+            qqLevel: 1,
+            qqStreak: 0,
+            settings: { pomodoroMinutes: 25, breakMinutes: 5 },
+          };
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed.settings) parsed.settings = { pomodoroMinutes: 25, breakMinutes: 5 };
+        return parsed;
+      } catch {
+        return {
+          notes: [],
+          sessions: [],
+          qqXP: 0,
+          qqLevel: 1,
+          qqStreak: 0,
+          settings: { pomodoroMinutes: 25, breakMinutes: 5 },
+        };
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    let data = loadData();
+
+    /* ---------- Navigation ---------- */
+    const pages = document.querySelectorAll(".page");
+    const navButtons = document.querySelectorAll(".nav-icon");
+    const homeJumpButtons = document.querySelectorAll("[data-page-jump]");
+
+    function showPage(pageId) {
+      pages.forEach(p => p.classList.remove("active"));
+      const page = document.getElementById("page-" + pageId);
+      if (page) page.classList.add("active");
+      navButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.page === pageId));
+    }
+
+    navButtons.forEach(btn => {
+      btn.addEventListener("click", () => showPage(btn.dataset.page));
+    });
+
+    homeJumpButtons.forEach(btn => {
+      btn.addEventListener("click", () => showPage(btn.dataset.pageJump));
+    });
+
+    /* ---------- AI Notes ---------- */
+    const aiPromptEl = document.getElementById("aiPrompt");
+    const aiButtons = document.querySelectorAll(".ai-btn");
+    const aiOutputEl = document.getElementById("aiOutput");
+    const saveAsNoteBtn = document.getElementById("saveAsNoteBtn");
+    let lastGeneratedContent = "";
+
+    function generateFlashcards(prompt) {
+      const parts = prompt
+        .split(/[.,;!?]/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .slice(0, 6);
+      if (!parts.length) {
+        return "<p>Try adding a bit more detail so we can build flashcards.</p>";
+      }
+      let html = '<div class="flashcard-grid">';
+      parts.forEach((c, i) => {
+        html += `
+          <div class="flashcard" data-index="${i}">
+            <div class="flashcard-front">Q: What is <strong>${c}</strong>?</div>
+            <div class="flashcard-back">A: Explain ${c} in your own words and give one example.</div>
+          </div>
+        `;
+      });
+      html += "</div>";
+      return html;
+    }
+
+    function generateInfographic(prompt) {
+      const items = [
+        "Key idea",
+        "Why it matters",
+        "Simple example",
+        "Common mistake",
+        "How to remember it",
+      ];
+      let html = '<ul class="infographic-list">';
+      items.forEach(label => {
+        html += `<li><strong>${label}:</strong> Relate this to "${prompt}" in 1–2 sentences.</li>`;
+      });
+      html += "</ul>";
+      return html;
+    }
+
+    function generatePodcast(prompt) {
+      return `
+        <div class="podcast-card">
+          <p>Imagine a 3-minute podcast where you explain: <strong>${prompt}</strong></p>
+          <p>Use: hook → simple explanation → real-life example → recap.</p>
+          <audio controls>
+            <source src="" type="audio/mpeg" />
+            Record your own explanation and attach it here if you like.
+          </audio>
+        </div>
+      `;
+    }
+
+    function generateMindmap(prompt) {
+      const words = prompt
+        .split(/\s+/)
+        .map(w => w.trim())
+        .filter(w => w.length > 3)
+        .slice(0, 8);
+      if (!words.length) {
+        return "<p>Try a slightly longer prompt so we can pull out key nodes.</p>";
+      }
+      let html = '<div class="mindmap">';
+      html += `<div class="mindmap-node" style="background:#1b4f9c;color:#f5f7ff;">${prompt}</div>`;
+      words.forEach(w => {
+        html += `<div class="mindmap-node">${w}</div>`;
+      });
+      html += "</div>";
+      return html;
+    }
+
+    function renderAIOutput(type, prompt) {
+      if (!prompt.trim()) {
+        aiOutputEl.innerHTML = "<p>Start by typing a topic or question above. No need to be perfect.</p>";
+        return;
+      }
+      let html = "";
+      if (type === "flashcards") html = generateFlashcards(prompt);
+      if (type === "infographic") html = generateInfographic(prompt);
+      if (type === "podcast") html = generatePodcast(prompt);
+      if (type === "mindmap") html = generateMindmap(prompt);
+      aiOutputEl.innerHTML = html;
+      lastGeneratedContent = `Type: ${type}\nPrompt: ${prompt}\n\n${aiOutputEl.innerText}`;
+      addXP(10);
+      updateQuizQuestUI();
+    }
+
+    aiButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        renderAIOutput(btn.dataset.type, aiPromptEl.value);
+      });
+    });
+
+    aiOutputEl.addEventListener("click", e => {
+      const card = e.target.closest(".flashcard");
+      if (card) card.classList.toggle("flipped");
+    });
+
+    saveAsNoteBtn.addEventListener("click", () => {
+      if (!lastGeneratedContent) return;
+      const now = new Date();
+      const note = {
+        id: Date.now().toString(),
+        title: `AI Note – ${now.toLocaleString()}`,
+        subject: aiPromptEl.value.slice(0, 40) || "AI-generated",
+        tags: ["ai", "generated"],
+        content: lastGeneratedContent,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
+      data.notes.unshift(note);
+      saveData();
+      refreshNotesUI();
+      refreshRecentNotes();
+      addXP(15);
+      updateQuizQuestUI();
+    });
+
+    /* ---------- Study Tracker ---------- */
+    const sessionSubjectEl = document.getElementById("sessionSubject");
+    const sessionTopicEl = document.getElementById("sessionTopic");
+    const sessionDurationEl = document.getElementById("sessionDuration");
+    const sessionScoreEl = document.getElementById("sessionScore");
+    const logSessionBtn = document.getElementById("logSessionBtn");
+    const sessionListEl = document.getElementById("sessionList");
+    const totalMinutesEl = document.getElementById("totalMinutes");
+    const currentStreakEl = document.getElementById("currentStreak");
+    const trackerXPEl = document.getElementById("trackerXP");
+    const trackerChartCanvas = document.getElementById("trackerChart");
+
+    function logSession() {
+      const subject = sessionSubjectEl.value.trim();
+      const topic = sessionTopicEl.value.trim();
+      const duration = parseInt(sessionDurationEl.value, 10);
+      const score = sessionScoreEl.value ? parseInt(sessionScoreEl.value, 10) : null;
+      if (!subject || !topic || !duration || duration <= 0) return;
+      const now = new Date();
+      const session = {
+        id: Date.now().toString(),
+        subject,
+        topic,
+        duration,
+        score,
+        createdAt: now.toISOString(),
+      };
+      data.sessions.unshift(session);
+      saveData();
+      refreshSessionsUI();
+      refreshAnalytics();
+      addXP(Math.min(duration, 30));
+      updateQuizQuestUI();
+      updateStreak();
+      sessionSubjectEl.value = "";
+      sessionTopicEl.value = "";
+      sessionDurationEl.value = "";
+      sessionScoreEl.value = "";
+    }
+
+    logSessionBtn.addEventListener("click", logSession);
+
+    function refreshSessionsUI() {
+      sessionListEl.innerHTML = "";
+      let totalMinutes = 0;
+      data.sessions.forEach(s => {
+        totalMinutes += s.duration;
+        const div = document.createElement("div");
+        div.className = "session-item";
+        const date = new Date(s.createdAt);
+        div.innerHTML = `
+          <div><strong>${s.subject}</strong> – ${s.topic}</div>
+          <div class="note-item-meta">${s.duration} min • ${date.toLocaleString()}${s.score != null ? " • Score: " + s.score : ""}</div>
+        `;
+        sessionListEl.appendChild(div);
+      });
+      totalMinutesEl.textContent = totalMinutes;
+      trackerXPEl.textContent = data.qqXP;
+      drawTrackerChart();
+    }
+
+    function updateStreak() {
+      if (!data.sessions.length) {
+        data.qqStreak = 0;
+        saveData();
+        currentStreakEl.textContent = "0";
+        return;
+      }
+      const days = new Set(data.sessions.map(s => new Date(s.createdAt).toDateString()));
+      data.qqStreak = days.size;
+      saveData();
+      currentStreakEl.textContent = data.qqStreak;
+    }
+
+    function drawTrackerChart() {
+      const ctx = trackerChartCanvas.getContext("2d");
+      const width = trackerChartCanvas.width;
+      const height = trackerChartCanvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      const now = new Date();
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        days.push(d.toDateString());
+      }
+
+      const minutesPerDay = days.map(d =>
+        data.sessions
+          .filter(s => new Date(s.createdAt).toDateString() === d)
+          .reduce((sum, s) => sum + s.duration, 0)
+      );
+
+      const maxMinutes = Math.max(30, ...minutesPerDay);
+      const barWidth = width / (days.length * 1.5);
+      const gap = barWidth / 2;
+
+      minutesPerDay.forEach((m, idx) => {
+        const x = idx * (barWidth + gap) + gap;
+        const barHeight = (m / maxMinutes) * (height - 20);
+        const y = height - barHeight - 10;
+        const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
+        gradient.addColorStop(0, "#4ea3ff");
+        gradient.addColorStop(1, "#123c7c");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth, barHeight);
+        ctx.fillStyle = "#a9b3d1";
+        ctx.font = "9px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(m.toString(), x + barWidth / 2, y - 2);
+      });
+    }
+
+    /* ---------- Pomodoro ---------- */
+    const pomodoroProgressEl = document.getElementById("pomodoroProgress");
+    const pomodoroLabelEl = document.getElementById("pomodoroLabel");
+    const pomodoroTimeEl = document.getElementById("pomodoroTime");
+    const startPomodoroBtn = document.getElementById("startPomodoroBtn");
+    const pausePomodoroBtn = document.getElementById("pausePomodoroBtn");
+    const resetPomodoroBtn = document.getElementById("resetPomodoroBtn");
+
+    let pomodoroInterval = null;
+    let pomodoroSecondsTotal = data.settings.pomodoroMinutes * 60;
+    let pomodoroSecondsRemaining = pomodoroSecondsTotal;
+    let pomodoroRunning = false;
+    let pomodoroOnBreak = false;
+
+    function updatePomodoroDisplay() {
+      const minutes = String(Math.floor(pomodoroSecondsRemaining / 60)).padStart(2, "0");
+      const seconds = String(pomodoroSecondsRemaining % 60).padStart(2, "0");
+      pomodoroTimeEl.textContent = `${minutes}:${seconds}`;
+      const total = pomodoroOnBreak ? data.settings.breakMinutes * 60 : data.settings.pomodoroMinutes * 60;
+      const progress = 100 * (1 - pomodoroSecondsRemaining / total);
+      pomodoroProgressEl.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+      if (!pomodoroRunning) {
+        pomodoroLabelEl.textContent = pomodoroOnBreak
+          ? "Break time—breathe, move, rest."
+          : "Ready for a gentle focus block?";
+      } else {
+        pomodoroLabelEl.textContent = pomodoroOnBreak
+          ? "Break in progress—no guilt for resting."
+          : "Focus session in progress.";
+      }
+    }
+
+    function startPomodoro() {
+      if (pomodoroRunning) return;
+      pomodoroRunning = true;
+      if (pomodoroSecondsRemaining <= 0) {
+        pomodoroOnBreak = false;
+        pomodoroSecondsTotal = data.settings.pomodoroMinutes * 60;
+        pomodoroSecondsRemaining = pomodoroSecondsTotal;
+      }
+      if (pomodoroInterval) clearInterval(pomodoroInterval);
+      pomodoroInterval = setInterval(() => {
+        pomodoroSecondsRemaining--;
+        if (pomodoroSecondsRemaining <= 0) {
+          pomodoroSecondsRemaining = 0;
+          pomodoroRunning = false;
+          clearInterval(pomodoroInterval);
+          if (!pomodoroOnBreak) {
+            alert("Nice work. Take a gentle 5-minute break.");
+            pomodoroOnBreak = true;
+            pomodoroSecondsTotal = data.settings.breakMinutes * 60;
+            pomodoroSecondsRemaining = pomodoroSecondsTotal;
+          } else {
+            alert("Break finished. Come back when you’re ready.");
+            pomodoroOnBreak = false;
+            pomodoroSecondsTotal = data.settings.pomodoroMinutes * 60;
+            pomodoroSecondsRemaining = pomodoroSecondsTotal;
+          }
+        }
+        updatePomodoroDisplay();
+      }, 1000);
+      updatePomodoroDisplay();
+    }
+
+    function pausePomodoro() {
+      pomodoroRunning = false;
+      if (pomodoroInterval) clearInterval(pomodoroInterval);
+      updatePomodoroDisplay();
+    }
+
+    function resetPomodoro() {
+      pomodoroRunning = false;
+      pomodoroOnBreak = false;
+      if (pomodoroInterval) clearInterval(pomodoroInterval);
+      pomodoroSecondsTotal = data.settings.pomodoroMinutes * 60;
+      pomodoroSecondsRemaining = pomodoroSecondsTotal;
+      updatePomodoroDisplay();
+    }
+
+    startPomodoroBtn.addEventListener("click", startPomodoro);
+    pausePomodoroBtn.addEventListener("click", pausePomodoro);
+    resetPomodoroBtn.addEventListener("click", resetPomodoro);
+    updatePomodoroDisplay();
+
+    /* ---------- QuizQuest ---------- */
+    const qqLevelEl = document.getElementById("qqLevel");
+    const qqXPEl = document.getElementById("qqXP");
+    const qqNextLevelXPEl = document.getElementById("qqNextLevelXP");
+    const qqStreakEl = document.getElementById("qqStreak");
+    const qqXPBarEl = document.getElementById("qqXPBar");
+    const qqFocusTextEl = document.getElementById("qqFocusText");
+
+    function xpForLevel(level) {
+      return 100 * level;
+    }
+
+    function addXP(amount) {
+      data.qqXP += amount;
+      while (data.qqXP >= xpForLevel(data.qqLevel)) {
+        data.qqXP -= xpForLevel(data.qqLevel);
+        data.qqLevel++;
+      }
+      saveData();
+    }
+
+    function updateQuizQuestUI() {
+      qqLevelEl.textContent = data.qqLevel;
+      qqXPEl.textContent = data.qqXP;
+      const next = xpForLevel(data.qqLevel);
+      qqNextLevelXPEl.textContent = next;
+      qqStreakEl.textContent = data.qqStreak;
+      const pct = Math.min(100, (data.qqXP / next) * 100);
+      qqXPBarEl.style.width = `${pct}%`;
+      let focus = "Level 1: Gentle reading & summarising.";
+      if (data.qqLevel >= 2 && data.qqLevel < 3) focus = "Level 2: Build and review flashcards.";
+      else if (data.qqLevel >= 3 && data.qqLevel < 4) focus = "Level 3: Self-testing and quick quizzes.";
+      else if (data.qqLevel >= 4) focus = "Level 4: Mind maps and connecting ideas.";
+      qqFocusTextEl.textContent = focus;
+    }
+
+    /* ---------- Notes ---------- */
+    const noteIdEl = document.getElementById("noteId");
+    const noteTitleEl = document.getElementById("noteTitle");
+    const noteSubjectEl = document.getElementById("noteSubject");
+    const noteTagsEl = document.getElementById("noteTags");
+    const noteContentEl = document.getElementById("noteContent");
+    const saveNoteBtn = document.getElementById("saveNoteBtn");
+    const clearNoteFormBtn = document.getElementById("clearNoteFormBtn");
+    const notesListEl = document.getElementById("notesList");
+    const noteSearchEl = document.getElementById("noteSearch");
+    const noteTagFilterEl = document.getElementById("noteTagFilter");
+
+    function clearNoteForm() {
+      noteIdEl.value = "";
+      noteTitleEl.value = "";
+      noteSubjectEl.value = "";
+      noteTagsEl.value = "";
+      noteContentEl.value = "";
+    }
+
+    function saveNote() {
+      const id = noteIdEl.value || Date.now().toString();
+      const title = noteTitleEl.value.trim() || "Untitled note";
+      const subject = noteSubjectEl.value.trim();
+      const tags = noteTagsEl.value
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean);
+      const content = noteContentEl.value.trim();
+      const now = new Date();
+      const existingIndex = data.notes.findIndex(n => n.id === id);
+      if (existingIndex >= 0) {
+        data.notes[existingIndex] = {
+          ...data.notes[existingIndex],
+          title,
+          subject,
+          tags,
+          content,
+          updatedAt: now.toISOString(),
+        };
+      } else {
+        data.notes.unshift({
+          id,
+          title,
+          subject,
+          tags,
+          content,
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        });
+        addXP(10);
+      }
+      saveData();
+      refreshNotesUI();
+      refreshRecentNotes();
+      updateQuizQuestUI();
+      clearNoteForm();
+    }
+
+    saveNoteBtn.addEventListener("click", saveNote);
+    clearNoteFormBtn.addEventListener("click", clearNoteForm);
+
+    function refreshNotesUI() {
+      const search = noteSearchEl.value.toLowerCase();
+      const tagFilter = noteTagFilterEl.value.toLowerCase();
+      notesListEl.innerHTML = "";
+      data.notes.forEach(n => {
+        const matchesSearch =
+          !search ||
+          n.title.toLowerCase().includes(search) ||
+          (n.subject || "").toLowerCase().includes(search) ||
+          (n.content || "").toLowerCase().includes(search);
+        const matchesTag =
+          !tagFilter ||
+          (n.tags || []).some(t => t.toLowerCase().includes(tagFilter));
+        if (!matchesSearch || !matchesTag) return;
+        const div = document.createElement("div");
+        div.className = "note-item";
+        const created = new Date(n.createdAt);
+        const tags = (n.tags || []).join(", ");
+        div.innerHTML = `
+          <div class="note-item-header">
+            <span class="note-item-title">${n.title}</span>
+            <span class="note-item-meta">${created.toLocaleDateString()}</span>
+          </div>
+          <span class="note-item-meta">${n.subject || ""}</span>
+          <span class="note-item-tags">${tags}</span>
+          <div class="note-item-actions">
+            <button class="secondary-btn small" data-action="edit" data-id="${n.id}">Edit</button>
+            <button class="secondary-btn small" data-action="delete" data-id="${n.id}">Delete</button>
+          </div>
+        `;
+        notesListEl.appendChild(div);
+      });
+    }
+
+    notesListEl.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      const note = data.notes.find(n => n.id === id);
+      if (!note) return;
+      if (action === "edit") {
+        noteIdEl.value = note.id;
+        noteTitleEl.value = note.title;
+        noteSubjectEl.value = note.subject || "";
+        noteTagsEl.value = (note.tags || []).join(", ");
+        noteContentEl.value = note.content || "";
+      } else if (action === "delete") {
+        if (!confirm("Delete this note? You can always create a new one later.")) return;
+        data.notes = data.notes.filter(n => n.id !== id);
+        saveData();
+        refreshNotesUI();
+        refreshRecentNotes();
+      }
+    });
+
+    noteSearchEl.addEventListener("input", refreshNotesUI);
+    noteTagFilterEl.addEventListener("input", refreshNotesUI);
+
+    /* ---------- Recent Notes ---------- */
+    const recentNotesEl = document.getElementById("recentNotes");
+
+    function refreshRecentNotes() {
+      recentNotesEl.innerHTML = "";
+      const recent = data.notes.slice(0, 8);
+      recent.forEach(n => {
+        const div = document.createElement("div");
+        div.className = "recent-note-item";
+        const date = new Date(n.updatedAt || n.createdAt);
+        div.innerHTML = `
+          <span class="recent-note-title">${n.title}</span>
+          <span class="recent-note-time">${date.toLocaleString()}</span>
+        `;
+        div.addEventListener("click", () => {
+          showPage("notes");
+          noteIdEl.value = n.id;
+          noteTitleEl.value = n.title;
+          noteSubjectEl.value = n.subject || "";
+          noteTagsEl.value = (n.tags || []).join(", ");
+          noteContentEl.value = n.content || "";
+        });
+        recentNotesEl.appendChild(div);
+      });
+    }
+
+    /* ---------- Timetable ---------- */
+    const timetablePromptEl = document.getElementById("timetablePrompt");
+    const generateTimetableBtn = document.getElementById("generateTimetableBtn");
+    const timetableOutputEl = document.getElementById("timetableOutput");
+
+    function generateTimetable(prompt) {
+      if (!prompt.trim()) {
+        timetableOutputEl.innerHTML =
+          "<p>Share roughly when you’re free and what you’d like to focus on. We’ll keep it kind.</p>";
+        return;
+      }
+      const subjects = [];
+      const lower = prompt.toLowerCase();
+      ["math", "chem", "physics", "bio", "history", "english", "language"].forEach(s => {
+        if (lower.includes(s)) subjects.push(s);
+      });
+      if (!subjects.length) subjects.push("your core subjects");
+      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      let html = "<ul>";
+      days.forEach((d, i) => {
+        const subject = subjects[i % subjects.length];
+        html += `<li><strong>${d}:</strong> 1–2 gentle blocks on ${subject}. Include a 5–10 minute break between them.</li>`;
+      });
+      html += "</ul>";
+      html += `<p class="soft-text">This is a suggestion, not a rule. If you miss a day, you’re still doing fine.</p>`;
+      timetableOutputEl.innerHTML = html;
+    }
+
+    generateTimetableBtn.addEventListener("click", () => {
+      generateTimetable(timetablePromptEl.value);
+    });
+
+    /* ---------- Settings ---------- */
+    const pomodoroLengthEl = document.getElementById("pomodoroLength");
+    const breakLengthEl = document.getElementById("breakLength");
+    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+    const settingsSavedMsgEl = document.getElementById("settingsSavedMsg");
+
+    function loadSettingsUI() {
+      pomodoroLengthEl.value = data.settings.pomodoroMinutes;
+      breakLengthEl.value = data.settings.breakMinutes;
+    }
+
+    saveSettingsBtn.addEventListener("click", () => {
+      const p = parseInt(pomodoroLengthEl.value, 10);
+      const b = parseInt(breakLengthEl.value, 10);
+      if (p && p > 0) data.settings.pomodoroMinutes = p;
+      if (b && b > 0) data.settings.breakMinutes = b;
+      saveData();
+      pomodoroSecondsTotal = data.settings.pomodoroMinutes * 60;
+      pomodoroSecondsRemaining = pomodoroSecondsTotal;
+      pomodoroOnBreak = false;
+      updatePomodoroDisplay();
+      settingsSavedMsgEl.textContent = "Settings saved. You can always change them later.";
+      setTimeout(() => (settingsSavedMsgEl.textContent = ""), 2500);
+    });
+
+    /* ---------- Analytics ---------- */
+    const analyticsSummaryEl = document.getElementById("analyticsSummary");
+
+    function refreshAnalytics() {
+      const totalSessions = data.sessions.length;
+      const totalMinutes = data.sessions.reduce((sum, s) => sum + s.duration, 0);
+      const avgDuration = totalSessions ? Math.round(totalMinutes / totalSessions) : 0;
+      analyticsSummaryEl.textContent = totalSessions
+        ? `You’ve logged ${totalSessions} sessions for a total of ${totalMinutes} minutes. Your average session is about ${avgDuration} minutes. That’s real effort—no matter the pace.`
+        : "No sessions logged yet. Whenever you’re ready, even a 5-minute session counts.";
+    }
+
+    /* ---------- Account export ---------- */
+    const exportDataBtn = document.getElementById("exportDataBtn");
+    const exportDataAreaEl = document.getElementById("exportDataArea");
+
+    exportDataBtn.addEventListener("click", () => {
+      exportDataAreaEl.value = JSON.stringify(data, null, 2);
+    });
+
+    /* ---------- Init ---------- */
+    function init() {
+      refreshSessionsUI();
+      updateStreak();
+      updateQuizQuestUI();
+      refreshNotesUI();
+      refreshRecentNotes();
+      refreshAnalytics();
+      loadSettingsUI();
+    }
+
+    init();
+  </script>
+</body>
+</html>
